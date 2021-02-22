@@ -17,7 +17,7 @@ import (
 var users []User
 var locker sync.Mutex
 
-const TRIAL_KISS_COUNT = 3
+const TRIAL_KISS_COUNT = 15
 
 func main() {
 	locker = sync.Mutex{}
@@ -175,16 +175,16 @@ func updateUser(user *User) {
 		return
 	}
 
-	u := getUser(user.UserID)
+	for i, v := range getUsers() {
+		if user.UserID == v.UserID {
+			users[i].KissCount = user.KissCount
+			users[i].IsTrial = user.IsTrial
 
-	if u == nil {
-		return
+			log.Printf("Update user %v\n", user)
+			saveJSON()
+			break
+		}
 	}
-
-	u = user
-
-	log.Printf("Update user %v\n", u)
-	saveJSON()
 }
 
 //Добавляем user в базу
