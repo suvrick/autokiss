@@ -1,6 +1,12 @@
 
-var urlData = "https://suvricksoft.ru/autokiss/who";
-var urlInit = "https://suvricksoft.ru/autokiss/init";
+var selfID = 0;
+var sendData = {};
+var _this = {};
+
+//var urlData = "http://localhost:8080/autokiss/who";
+//var urlInit = "http://localhost:8080/autokiss/init";
+ var urlData = "https://suvricksoft.ru/autokiss/who";
+ var urlInit = "https://suvricksoft.ru/autokiss/init";
 
 function getData(data) {
     
@@ -16,7 +22,7 @@ function getData(data) {
         if(xhr.status === 200){
             var result = JSON.parse(xhr.responseText);
             if(result.code != 0) {
-                setTimeout(callHandler.bind(this, result), result.delay);
+                setTimeout(callHandler.bind(_this, result), result.delay);
             }
         }
     };
@@ -24,16 +30,64 @@ function getData(data) {
 }
 
 function callHandler(result){
-    core.protocol.Connection.sendData(result.code, result.data);
+
+    if (_this.hasOwnProperty("Main")) {
+       _this.Main.connection.sendData(result.code, result.data);
+       return;
+    }
+
+    if (_this.hasOwnProperty("Game")) {
+        core.protocol.Connection.sendData(result.code, result.data);
+        return;
+     }
 }
 
 function init() {
+
+    if (this.hasOwnProperty("Main")) {
+        _this = this;
+        selfID = Main.self.id;
+        Main.connection.listen(receiveDataMain, [28, 29]);
+        sendData = Main.connection.sendData;
+    }
+
+    if (this.hasOwnProperty("Game")) {
+        _this = this;
+        selfId = Game.selfId;
+        core.protocol.Connection._instance.receiveData = receiveDataGame;
+        sendData = core.protocol.Connection.sendData;
+    }
+
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", urlInit + "/" + Game.selfId,  true);
+    xhr.open("GET", urlInit + "/" + selfID,  true);
     xhr.send();
+
 }
 
-function receiveData(buffer) {
+function receiveDataMain(buffer) {
+
+   var arr = new ArrayBuffer(buffer.bytesLength + 6);
+   var data = new DataView(arr, 0, buffer.bytesLength + 6);
+
+   data.setInt32(0, buffer.id, true);
+   data.setInt16(4, buffer.type, true);
+
+   if(buffer.type === 29 ) {
+        data.setInt32(6, buffer[0], true);
+        data.setInt32(10, buffer[1], true);
+        data.setInt32(14, buffer[2], true);
+        data.setInt32(18, buffer[3], true);
+   }
+
+   if(buffer.type === 28 ) {
+        data.setInt32(6, buffer[0], true);
+  }
+
+  getData(data.buffer);
+
+}
+
+function receiveDataGame(buffer) {
         var id = buffer.readInt();
 
         var type = (buffer.readUnsignedShort()) | 0;
@@ -49,5 +103,5 @@ function receiveData(buffer) {
         this.receivePacket();
 }
 
-core.protocol.Connection._instance.receiveData = receiveData;
+
 init();

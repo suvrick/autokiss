@@ -17,7 +17,7 @@ import (
 var users []User
 var locker sync.Mutex
 
-const TRIAL_KISS_COUNT = 15
+const TRIAL_KISS_COUNT = 150000
 
 func main() {
 	locker = sync.Mutex{}
@@ -30,8 +30,8 @@ func main() {
 	router.GET("/autokiss/all", allHandler)
 	router.GET("/autokiss/auth/:id", authHandler)
 	router.GET("/autokiss/init/:id", initHandler)
-	//router.Run(":8080")
-	router.RunTLS(":443", "../certs/cert.crt", "../certs/pk.key")
+	router.Run(":8080")
+	//router.RunTLS(":443", "../certs/cert.crt", "../certs/pk.key")
 
 }
 
