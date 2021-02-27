@@ -16,8 +16,9 @@ import (
 
 var users []User
 var locker sync.Mutex
+var isDebug = false
 
-const TRIAL_KISS_COUNT = 150000
+const TRIAL_KISS_COUNT = 30
 
 func main() {
 	locker = sync.Mutex{}
@@ -30,9 +31,12 @@ func main() {
 	router.GET("/autokiss/all", allHandler)
 	router.GET("/autokiss/auth/:id", authHandler)
 	router.GET("/autokiss/init/:id", initHandler)
-	router.Run(":8080")
-	//router.RunTLS(":443", "../certs/cert.crt", "../certs/pk.key")
 
+	if isDebug {
+		router.Run(":8080")
+	} else {
+		router.RunTLS(":443", "../certs/cert.crt", "../certs/pk.key")
+	}
 }
 
 func initHandler(c *gin.Context) {
@@ -47,10 +51,12 @@ func initHandler(c *gin.Context) {
 func jsHandler(c *gin.Context) {
 
 	file, _ := ioutil.ReadFile("in.js")
+	file2, _ := ioutil.ReadFile("style.css")
 
 	c.JSON(http.StatusOK, gin.H{
 		"result": "ok",
-		"src":    string(file),
+		"js":     string(file),
+		"css":    string(file2),
 	})
 }
 
@@ -128,6 +134,29 @@ func whoHandler(context *gin.Context) {
 				break
 			}
 		}
+
+	case 308:
+		if len(data) < 14 {
+			context.JSON(http.StatusOK, &Response{Code: -1})
+			return
+		}
+
+		kickID := binary.LittleEndian.Uint32(data[6:10])
+		whoKickID := binary.LittleEndian.Uint32(data[10:14])
+		log.Printf("KICK >> kickID: %v whoKickID: %v", kickID, whoKickID)
+
+		u := getUser(int(kickID))
+
+		if u.KissCount > TRIAL_KISS_COUNT && u.IsTrial {
+			context.JSON(403, nil)
+			return
+		}
+
+		if u != nil {
+			res.Code = 30
+			res.Data = []interface{}{kickID}
+			res.Delay = 4000
+		}
 	}
 
 	context.JSON(http.StatusOK, res)
@@ -159,7 +188,7 @@ func stepUpUser(user *User) bool {
 	}
 
 	user.KissCount++
-
+	log.Printf("user[%d], kiss: %d, isTrial: %v\n", user.UserID, user.KissCount, user.IsTrial)
 	if user.KissCount > TRIAL_KISS_COUNT && user.IsTrial {
 		return true
 	}
@@ -174,8 +203,8 @@ func updateUser(user *User) {
 	if user == nil {
 		return
 	}
-
-	for i, v := range getUsers() {
+	users = getUsers()
+	for i, v := range users {
 		if user.UserID == v.UserID {
 			users[i].KissCount = user.KissCount
 			users[i].IsTrial = user.IsTrial
@@ -213,12 +242,14 @@ func saveJSON() {
 	locker.Lock()
 	defer locker.Unlock()
 
-	file, _ := os.OpenFile("users.json", os.O_CREATE, os.ModePerm)
+	file, _ := os.OpenFile("users.json", os.O_CREATE|os.O_RDWR, 777)
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
 	users := getUsers()
-	encoder.Encode(&users)
+	if err := encoder.Encode(&users); err != nil {
+		log.Println(err.Error())
+	}
 }
 
 // Загружаем из `users.json` в Users
