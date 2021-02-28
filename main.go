@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,17 +16,23 @@ import (
 )
 
 var users []User
+var states []State
+
 var locker sync.Mutex
-var isDebug = false
+var isDebug = true
 
 const TRIAL_KISS_COUNT = 30
 
 func main() {
+
+	states = make([]State, 0)
+
 	locker = sync.Mutex{}
 	router := gin.Default()
 	router.Use(cors.Default())
 	router.StaticFile("/", "www/index.html")
-	router.StaticFile("/autokiss.zip", "autokiss.zip")
+	router.GET("/autokiss", downloadZipHandler)
+	router.GET("/autokiss/zip", zipHandler)
 	router.GET("/autokiss/js", jsHandler)
 	router.POST("/autokiss/who", whoHandler)
 	router.GET("/autokiss/all", allHandler)
@@ -58,6 +65,40 @@ func jsHandler(c *gin.Context) {
 		"js":     string(file),
 		"css":    string(file2),
 	})
+}
+
+func zipHandler(c *gin.Context) {
+	loadStateJSON()
+	fmt.Println(states)
+	c.JSON(200, gin.H{
+		"count":     len(states),
+		"downloads": &states,
+	})
+}
+
+func downloadZipHandler(c *gin.Context) {
+
+	loadStateJSON()
+	state := State{
+		IP: c.ClientIP(),
+	}
+
+	fmt.Println(state)
+
+	for i, v := range states {
+		if state.IP == v.IP {
+			states[i].Count++
+			saveStateJSON()
+			fmt.Println("save state.json")
+			c.File("autokiss.zip")
+			return
+		}
+	}
+
+	state.Count++
+	states = append(states, state)
+	saveStateJSON()
+	c.File("autokiss.zip")
 }
 
 func whoHandler(context *gin.Context) {
@@ -291,4 +332,37 @@ type User struct {
 	UserID    int  `json:"user_id"`
 	IsTrial   bool `json:"is_trial"`
 	KissCount int  `json:"kiss_count"`
+}
+
+//State ...
+type State struct {
+	IP    string `json:"ip"`
+	Count int    `json:"count"`
+}
+
+//Сохраняем Users в `state.json`
+func saveStateJSON() {
+
+	locker.Lock()
+	defer locker.Unlock()
+
+	file, _ := os.OpenFile("state.json", os.O_CREATE|os.O_RDWR, 777)
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	if err := encoder.Encode(&states); err != nil {
+		log.Println(err.Error())
+	}
+}
+
+// Загружаем из `state.json` в Stats
+func loadStateJSON() {
+	locker.Lock()
+	defer locker.Unlock()
+	file, _ := ioutil.ReadFile("state.json")
+	states = make([]State, 0)
+	err := json.Unmarshal(file, &states)
+	if err != nil {
+		log.Println(err.Error())
+	}
 }

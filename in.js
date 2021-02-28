@@ -1,7 +1,7 @@
 
 var _this = {};
 
-var isDebug = true;
+var isDebug = false;
 var urlData = "";
 var urlInit = "";
 
@@ -13,6 +13,7 @@ var isMenuShow = false;
 var autoSaveKick = false;
 var autoMoveToRoom = true;
 var isShowAlert = false;
+var isHidePopup = false;
 
 var menu = {}
 var screenGame = {}
@@ -21,6 +22,9 @@ var btnClose = {}
 var autoKissBtn = {}
 var autoSaveBtn = {}
 var hidePopupBtn = {}
+var unlockGuestBtn = {}
+
+var timerPopup = 0;
 
 
 
@@ -51,11 +55,6 @@ function callHandler(result) {
     _this.Main.connection.sendData(result.code, result.data);
 }
 
-// Send packet MOVE type 21 id 259 data: 21 (2) [22132982, 0]
-
-
-//packet KICK_KICKS:308 with id 1894 and length 1 data: 17770939,22132982,30
-//Send packet BOTTLE_SAVE type 30 id 604 data: 30 [17770939]
 function showAlert() {
 
     if (isShowAlert)
@@ -87,7 +86,7 @@ function showAlert() {
     btnClose.style.cursor = "pointer";
     btnClose.innerText = "x";
     btnClose.addEventListener("click", function () {
-        root.removeChild(div)
+        screenGame.removeChild(div)
     })
 
     div.appendChild(head);
@@ -97,6 +96,16 @@ function showAlert() {
     screenGame.appendChild(div)
 
     isShowAlert = true;
+}
+
+function unlock(){
+    var s = document.getElementsByClassName("recaptcha-checkbox goog-inline-block recaptcha-checkbox-unchecked rc-anchor-checkbox")[0];
+    if(s === undefined || s === null) {
+        console.log("nullable object capcha")
+        return;
+    }
+
+    s.click();
 }
 
 function receiveDataMain(buffer) {
@@ -168,6 +177,35 @@ function receiveDataMain(buffer) {
 
 }
 
+function unlockGuest(){
+    var items = _this.document.getElementsByClassName("guest")
+    for (let i = 0; i < items.length; i++) {
+        items[i].setAttribute("is-unlocked", true)
+    }
+}
+
+function hidePopup() {
+    
+    timerPopup = setInterval(function(){
+        var items = _this.document.getElementsByClassName("popup")
+
+        if(items === undefined || items === null)
+            return;
+
+        for (let i = 0; i < items.length; i++) {
+            if(items[i].parentElement.className.includes("dialog")){
+                console.log("delete popup", items[i].parentElement.className)
+                items[i].parentElement.remove() 
+            }
+
+            if(items[i].parentElement.parentElement.className.includes("dialog")){
+                console.log("delete popup", items[i].parentElement.parentElement.className)
+                items[i].parentElement.parentElement.remove() 
+            }
+        }
+    }, 1000)
+}
+
 function setTopLine() {
     document.getElementsByTagName("body")[0].style.borderTop = "3px solid yellow";
 }
@@ -184,7 +222,7 @@ function createPopupMenu(){
     
     <ul>
         <li>
-            <h2>Настроки</h2>
+            <h3>Helper KissMe (v3.3)</h3>
             <span id="btnClose">x</span>
         <li>
         <li>
@@ -195,6 +233,9 @@ function createPopupMenu(){
         </li>
         <li>
             <label id="hidePopupBtn" >Скрыть всплыв.окна (вкл)</label>
+        </li>       
+        <li>
+            <label id="unlockGuestBtn" >Разблокировать гостей </label>
         </li>
     </ul>
     `
@@ -209,10 +250,10 @@ function addBtn() {
     autoKissBtn = document.getElementById("autoKissBtn")
     autoSaveBtn = document.getElementById("autoSaveBtn")
     hidePopupBtn = document.getElementById("hidePopupBtn")
-
+    unlockGuestBtn = document.getElementById("unlockGuestBtn")
 
      var btn = document.createElement("span")
-     btn.innerText = "⋮";
+     btn.innerText = "+";
      btn.classList.add("btn")
      btn.addEventListener("click", function(){
         isMenuShow = !isMenuShow;
@@ -234,6 +275,7 @@ function addBtn() {
         isMenuShow = false;
         menu.style.display = "none";
      })
+
 
     autoSaveBtn.addEventListener("click",function(){
         isMenuShow = false;
@@ -263,7 +305,22 @@ function addBtn() {
      hidePopupBtn.addEventListener("click",function(){
         isMenuShow = false;
         menu.style.display = "none";
+        isHidePopup = !isHidePopup;
+        if(isHidePopup) {
+            console.log("hide popup")
+            hidePopupBtn.innerText = "Скрыть всплыв.окна (выкл)";
+            hidePopup();
+        } else {
+            console.log("show popup")
+            hidePopupBtn.innerText = "Скрыть всплыв.окна (вкл)";
+            clearInterval(timerPopup);
+        }
      })
+
+     unlockGuestBtn.addEventListener("click",function(){
+        unlockGuest();
+     })
+
  
      setInterval(()=>{
          btn.style.opacity = 0.1;
@@ -307,51 +364,3 @@ function init() {
 }
 
 var timerInit = setInterval(init, 1000)
-
-/*
-
-
-
-
-
-function createMenu(root) {
-
-    console.log("root", root)
-    //var root = document.getElementById("screen_game");
-    var div = document.createElement("div");
-    div.classList.add("menu_wrapper");
-
-    div.innerHTML = `
-    <dl>
-    <dt> Автопоцелуи </dt>
-    <dd>Вкл</dd>
-
-    <dt> Автосохранения </dt>
-    <dd>Вкл</dd>
-</dl>
-    `
-
-    // var li = document.createElement("li")
-    // li.innerText = "вкл";
-    // ul.appendChild(li)
-
-    root.append(div)
-}
-
-
-
-
-function callShowMenu(e){
-    if (e.code === Key) {
-        inShowMenu = !inShowMenu;
-        if(inShowMenu) {
-            menu.style.display = "flex"
-        } else {
-            menu.style.display = "none"
-        }
-    }
-}
-
-addEventListener("keydown", callShowMenu);
-var timer = setInterval(initUI, 1000);
-*/
