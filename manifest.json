@@ -11,7 +11,8 @@
             "matches": [
                 "https://bottle2.itsrealgames.com/www/*",
                 "https://bottle2.itsrealgames.com/mobile/build/*",
-                "https://m.inspin.me/build/*"
+                "https://m.inspin.me/build/*",
+                "https://inspin.me/build/*"
             ],
             "exclude_matches": ["https://bottle2.itsrealgames.com/www/preloader.html?10"],
             "js": ["context.js"],

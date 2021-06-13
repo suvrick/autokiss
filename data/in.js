@@ -262,7 +262,7 @@ function initialize() {
     timerConnectToGame--;
 
     if (!this.hasOwnProperty("Main")) {
-        console.log("Не смог найти обЪект Main")
+        console.log("autokiss >> Не смог найти обЪект Main")
         if (timerConnectToGame === 0) {
             alert(msgError)
             clearInterval(timerInit)
@@ -273,7 +273,7 @@ function initialize() {
     //Пытаемся найти главный контейнер с игрой
     screenGameElement = document.getElementById("screen_game");
     if (screenGameElement === undefined || screenGameElement === null) {
-        console.log("Не смог найти главный контайнер #screen_game")
+        console.log("autokiss >> Не смог найти главный контайнер #screen_game")
         if (timerConnectToGame === 0) {
             alert(msgError)
             clearInterval(timerInit)
