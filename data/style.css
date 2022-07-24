@@ -111,3 +111,11 @@
     font-size: 12px;
     color: #fff !important;
 }
+
+.autokiss_input {
+    width: 50px;
+    border: none;
+    background: #836bcc;
+    color: #fff;
+    font-size: 16px;
+}

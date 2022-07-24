@@ -1,8 +1,8 @@
 ﻿{
     "name": "AutoKiss Helper FREE",
     "description": "По всем техническим вопросом пишем мне в телеграм @suvrick",
-    "manifest_version": 2,
-    "version": "4.2",
+    "manifest_version": 3,
+    "version": "5.1",
     "icons": {
         "48": "logov2.png"
     },
@@ -22,9 +22,10 @@
             "run_at": "document_end"
         }
     ],
-    "web_accessible_resources": [
-        "data/in.js"
-    ],
+    "web_accessible_resources": [{ 
+        "resources": ["/data/in.js"],
+        "matches": ["<all_urls>"]
+      }],
     "permissions": [
         "tabs"
     ]

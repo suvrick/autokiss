@@ -25,6 +25,10 @@ var catchPacketID = [28, 29, 308];  // пакеты
 
 var msgError = 'Уп-с. Критическая ошибка. Сообщите об этом мне в телеграм @suvrick';
 
+var timerByRollValue = 6
+var timerByKissValue = 8
+var timerBySaveValue = 7
+
 /*
 
     Ядро
@@ -54,42 +58,47 @@ function receiveDataMain(buffer) {
         return;
     }
 
-    //console.log(">>>>>>>>", buffer)
+    console.log("autokiss >> ", buffer)
 
-    switch (buffer.type) {
-        /* BOTTLE_LEADER */
+
+    switch (buffer._type) {
         case 28:
+            /* BOTTLE_LEADER */
 
             var leader = buffer[0]
 
             if (leader === selfID) {
-                setInterval(() => {
+                console.log("autokiss >> It`s me roll bottle!")
+                setTimeout(() => {
+                    /* Крутим бутылочку */
                     Main.connection.sendData(28, 0);
-                }, 5000);
+                    console.log("autokiss >> I`am rolled bottle")
+                }, timerByRollValue * 1000);
             }
 
             break;
-        /* BOTTLE_ROLL */
         case 29:
+            /* BOTTLE_ROLL */
 
             var leader = buffer[0]
             var rolled = buffer[1]
 
             if (leader === selfID || rolled === selfID) {
-
-                setInterval(() => {
+                console.log("autokiss >> It`s me kissing!")
+                setTimeout(() => {
+                    /* Целуймся */
                     Main.connection.sendData(29, 1);
-                }, 8000);
+                    console.log("autokiss >> I`am kissed!")
+                }, timerByKissValue * 1000);
             }
 
             break;
-        /* KICKS */
-        case 308:
+        case 308: /* KICKS */
 
             var kickID = buffer[0][0][0]
             var kickID2 = buffer[0][0][1]
 
-            //console.log(">>>>>>>>>>>>", buffer, kickID, kickID2)
+            console.log("autokiss >> ", buffer, kickID, kickID2)
 
             if (kickID != selfID) {
                 return;
@@ -100,9 +109,9 @@ function receiveDataMain(buffer) {
                 return;
             }
 
-            setInterval(() => {
+            setTimeout(() => {
                 Main.connection.sendData(30, selfID);
-            }, 7000);
+            }, timerBySaveValue * 1000);
             break;
     }
 }
@@ -139,7 +148,17 @@ function createPopupMenu() {
                 <span class="on"></span>
                 <label id="unlockGuestBtn" >Разблокировать гостей </label>
             </li>
+            <li>
+                <label>Время вращения бутылки</label>
+                <input id="timerByRoll" class="autokiss_input" type="text" value="5"></input>
+            </li>
+
+            <li>
+                <label>Время поцелуй</label>
+                <input id="timerByKiss" class="autokiss_input" type="text" value="7"></input>
+            </li>
         </ul>
+
 
         <div class="footer" >
             <p>
@@ -151,9 +170,38 @@ function createPopupMenu() {
     //push buttons container
     screenGameElement.appendChild(menuAppElement);
 
+    var timerByKiss = document.getElementById("timerByKiss")
+    var obj = localStorage.getItem("timerByKissValue")
+    if (obj) {
+        timerByKissValue = obj
+    }
+
+    timerByKiss.value = timerByKissValue
+    timerByKiss.addEventListener('change',function(){  
+        timerByKissValue = timerByKiss.value
+        localStorage.setItem("timerByKissValue", timerByKissValue)
+        console.log("autokiss >> change timer by kiss: ", timerByKissValue)
+    })
+
+    var timerByRoll = document.getElementById("timerByRoll")
+    var obj2 = localStorage.getItem("timerByRollValue")
+    if (obj2) {
+        timerByRollValue = obj2
+    }
+
+    timerByRoll.value = timerByRollValue
+    timerByRoll.addEventListener('change',function(){
+        timerByRollValue = timerByRoll.value
+        localStorage.setItem("timerByRollValue", timerByRollValue)
+        console.log("autokiss >> change timer by roll: ", timerByRollValue)
+    })
+
     // set event to menu item
     for (let b of document.querySelectorAll(".autokiss_menu > li")) {
         b.addEventListener('click', function () {
+
+            if (this.children[1].id === "timerByKiss" || this.children[1].id === "timerByRoll")
+            return
 
             this.children[0].classList.toggle("on")
             this.children[0].classList.toggle("off")
@@ -163,7 +211,7 @@ function createPopupMenu() {
             switch (itemID) {
                 case "autoKissBtn":
                     isAutoKiss = !isAutoKiss;
-                    isAutoKiss ?  setTopLine() : delTopMark();  
+                    isAutoKiss ? setTopLine() : delTopMark();
                     break;
                 case "autoSaveBtn":
                     isAutoSaveKick = !isAutoSaveKick;
@@ -218,7 +266,7 @@ function unlockGuest() {
 //Скрываем всплывающие окна в игре
 function hidePopup() {
 
-    timerPopup = setInterval( () => {
+    timerPopup = setInterval(() => {
         var items = this.document.getElementsByClassName("popup")
 
         if (items === undefined || items === null)
