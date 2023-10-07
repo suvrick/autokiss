@@ -54,15 +54,6 @@ function createPopupMenu() {
             <span class="on"></span>
             <label id="hideRollBtn" >Отключить ленту</label>
         </li>  
-        <li>
-                <span class="on"></span>
-                <label id="hideBonus">Бонус</label>
-        </li>
-        <li>
-                <span class="on"></span>
-                <label id="autoChat">АвтоЧат</label>
-        </li>
-  
         <div id="div-speed">
             <label>Выберите скорость</label>
         <br>
@@ -95,11 +86,11 @@ function createPopupMenu() {
                     case "hideRollBtn":
                         isRollHide = !isRollHide, hideRoll();
                         break;
-                    case "hideBonus":
-                        isBonus = !isBonus, bonus();
-                        break;
-                    case "autoChat":
-                        isAutoChat = !isAutoChat, autoChat()
+                    // case "hideBonus":
+                    //     isBonus = !isBonus, bonus();
+                    //     break;
+                    // case "autoChat":
+                    //     isAutoChat = !isAutoChat, autoChat()
                 }
             })
 }
