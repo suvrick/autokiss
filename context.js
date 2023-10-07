@@ -8,9 +8,6 @@
     };
 
     (document.head || document.documentElement).appendChild(script);
-
-
-    
 })()
 
 
